@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For You · My Everything</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0d0610;
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            overflow: hidden;
+            color: white;
+            position: relative;
+            touch-action: manipulation;
+        }
+
+        #flowerCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ----- PROPOSAL SCREEN (INTRO) ----- */
+        .proposal-screen {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background: radial-gradient(circle at center, #180a22 0%, #0d0610 100%);
+            padding: 20px;
+            transition: opacity 1s cubic-bezier(0.23, 1, 0.32, 1), visibility 1s;
+        }
+
+        .proposal-box {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            padding: clamp(24px, 5vh, 45px) clamp(20px, 4vw, 40px);
+            background: rgba(20, 10, 25, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 200, 230, 0.15);
+            box-shadow: 0 30px 70px rgba(199, 125, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ----- FEATURED IMAGE FRAME ----- */
+        .proposal-image-wrapper {
+            position: relative;
+            width: clamp(140px, 25vw, 200px);
+            height: clamp(140px, 25vw, 200px);
+            margin-bottom: 25px;
+            border-radius: 50%;
+            padding: 3px;
+            background: conic-gradient(from 0deg, #f7b0d9, #c77dff, #f7b0d9);
+            box-shadow: 0 0 30px rgba(199, 125, 255, 0.3);
+            animation: spinGlow 8s linear infinite;
+        }
+
+        .proposal-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+            border: 2px solid #0d0610;
+        }
+
+        @keyframes spinGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Counter-rotate content inside wrapper to keep the image stable while the border spins */
+        .proposal-image-wrapper img {
+            animation: unspin 8s linear infinite;
+        }
+        @keyframes unspin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
+        .proposal-title {
+            font-size: clamp(1.4rem, 3.5vw, 2rem);
+            font-weight: 300;
+            line-height: 1.4;
+            letter-spacing: 0.5px;
+            margin-bottom: 35px;
+            background: linear-gradient(135deg, #f9d4e8, #f2a6d3, #c77dff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .proposal-buttons {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            min-height: 70px;
+            width: 100%;
+        }
+
+        .proposal-buttons button {
+            background: rgba(255, 220, 240, 0.08);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 200, 230, 0.2);
+            color: #f0d4e8;
+            font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+            padding: 12px 32px;
+            border-radius: 60px;
+            cursor: pointer;
+            font-weight: 400;
+            letter-spacing: 1px;
+            min-width: 120px;
+            transition: background 0.25s, border 0.25s, transform 0.1s;
+            box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .proposal-buttons button#yesBtn {
+            background: linear-gradient(135deg, rgba(199, 125, 255, 0.2), rgba(247, 176, 217, 0.2));
+            border: 1px solid rgba(247, 176, 217, 0.4);
+        }
+
+        .proposal-buttons button:active {
+            transform: scale(0.95);
+        }
+
+        .proposal-buttons button.runaway {
+            position: fixed;
+            z-index: 1000;
+            transition: left 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                        top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* ----- MAIN PRESENTATION CONTAINER ----- */
+        .presentation {
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            padding: 10px 10px 20px;
+            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(1.05);
+            transition: opacity 1.2s cubic-bezier(0.23, 1, 0.32, 1), transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .presentation.is-active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ----- TITLE ----- */
+        .love-title {
+            font-size: clamp(1.8rem, 6vw, 3rem);
+            font-weight: 300;
+            letter-spacing: clamp(4px, 1.5vw, 8px);
+            text-transform: uppercase;
+            margin-bottom: clamp(10px, 2vh, 20px);
+            background: linear-gradient(135deg, #f9d4e8, #f2a6d3, #d47bb3, #c77dff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(199, 125, 255, 0.5);
+            transform: translateZ(40px);
+            animation: floatTitle 5s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 2vw, 18px);
+            padding: 0 10px;
+            text-align: center;
+        }
+        .love-title i {
+            -webkit-text-fill-color: initial;
+            color: #f7b0d9;
+            filter: drop-shadow(0 0 15px #c77dff);
+            font-size: clamp(1.2rem, 3vw, 2rem);
+        }
+        @keyframes floatTitle {
+            0%, 100% { transform: translateZ(40px) translateY(0); }
+            50% { transform: translateZ(60px) translateY(-8px); }
+        }
+
+        /* ----- CAROUSEL ----- */
+        .carousel-3d {
+            width: 100%;
+            height: clamp(320px, 55vh, 480px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-style: preserve-3d;
+            position: relative;
+            margin: clamp(5px, 1vh, 10px) 0;
+            touch-action: none;
+        }
+
+        .carousel-track {
+            position: relative;
+            width: clamp(200px, 40vw, 300px);
+            height: clamp(280px, 45vh, 420px);
+            transform-style: preserve-3d;
+            transition: transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .video-card {
+            position: absolute;
+            width: clamp(180px, 35vw, 280px);
+            height: clamp(250px, 40vh, 390px);
+            left: 50%;
+            top: 50%;
+            margin-left: calc(clamp(180px, 35vw, 280px) / -2);
+            margin-top: calc(clamp(250px, 40vh, 390px) / -2);
+            border-radius: clamp(20px, 3vw, 32px);
+            overflow: hidden;
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+            background: #120917;
+            transition: transform 1.3s cubic-bezier(0.23, 1, 0.32, 1), 
+                        opacity 1.3s cubic-bezier(0.23, 1, 0.32, 1), 
+                        filter 1.3s cubic-bezier(0.23, 1, 0.32, 1),
+                        box-shadow 1.3s cubic-bezier(0.23, 1, 0.32, 1);
+            opacity: 0.25;
+            filter: brightness(0.4) blur(4px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+        }
+
+        .video-card.is-focused {
+            opacity: 1;
+            filter: brightness(1) blur(0px) contrast(1.05);
+            box-shadow: 0 30px 70px rgba(199, 125, 255, 0.5), 0 0 40px rgba(247, 176, 217, 0.3);
+            transform: var(--card-transform) scale(1.15) !important; 
+            z-index: 50;
+        }
+
+        .video-card.is-neighbor {
+            opacity: 0.65;
+            filter: brightness(0.65) blur(1px);
+            box-shadow: 0 20px 45px rgba(0,0,0,0.7);
+            z-index: 20;
+        }
+
+        .video-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+        }
+
+        .video-card .glow-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: clamp(20px, 3vw, 32px);
+            padding: 2px;
+            background: conic-gradient(from 0deg, #f7b0d9, #c77dff, #f7b0d9, #c77dff, #f7b0d9);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: spinRing 6s linear infinite;
+        }
+        @keyframes spinRing {
+            0% { background: conic-gradient(from 0deg, #f7b0d9, #c77dff, #f7b0d9, #c77dff, #f7b0d9); }
+            100% { background: conic-gradient(from 360deg, #f7b0d9, #c77dff, #f7b0d9, #c77dff, #f7b0d9); }
+        }
+
+        .video-card .caption {
+            position: absolute;
+            bottom: clamp(12px, 2vh, 20px);
+            left: clamp(12px, 2vw, 20px);
+            font-size: clamp(0.7rem, 1.5vw, 1.1rem);
+            font-weight: 400;
+            background: rgba(10, 3, 12, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: clamp(4px, 0.8vh, 8px) clamp(12px, 2vw, 22px);
+            border-radius: 40px;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 200, 230, 0.25);
+            color: #ffe5f2;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+            transform: translateZ(20px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        /* ----- CONTROLS ----- */
+        .controls {
+            display: flex;
+            gap: clamp(15px, 4vw, 40px);
+            margin: clamp(5px, 1vh, 10px) 0;
+            transform: translateZ(30px);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .controls button {
+            background: rgba(255, 220, 240, 0.08);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 200, 230, 0.2);
+            color: #f0d4e8;
+            font-size: clamp(0.9rem, 2vw, 1.5rem);
+            padding: clamp(10px, 1.5vh, 14px) clamp(20px, 3vw, 32px);
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 1.5vw, 14px);
+            font-weight: 300;
+            letter-spacing: 1px;
+            min-width: clamp(90px, 20vw, 140px);
+            justify-content: center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .controls button i {
+            font-size: clamp(1rem, 2vw, 1.6rem);
+            color: #f7b0d9;
+            filter: drop-shadow(0 0 8px #c77dff);
+        }
+
+        .controls button:active {
+            transform: scale(0.92);
+            background: rgba(255, 200, 230, 0.15);
+        }
+
+        /* ----- POETRY SECTION ----- */
+        .poetry-section {
+            display: none;
+            width: 92%;
+            max-width: 900px;
+            margin: 10px auto;
+            padding: clamp(20px, 4vh, 40px) clamp(15px, 3vw, 30px);
+            background: rgba(20, 10, 25, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: clamp(30px, 5vw, 50px);
+            border: 1px solid rgba(255, 200, 230, 0.15);
+            box-shadow: 0 30px 80px rgba(199, 125, 255, 0.15);
+            animation: fadeInPoetry 2s ease-out;
+            position: relative;
+            overflow: hidden;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .poetry-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(199, 125, 255, 0.05), transparent, rgba(247, 176, 217, 0.05), transparent);
+            animation: rotateBg 20s linear infinite;
+        }
+
+        @keyframes rotateBg {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInPoetry {
+            0% { opacity: 0; transform: scale(0.8) translateY(30px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .poetry-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .poetry-content .heart-icon {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: #f7b0d9;
+            animation: pulseHeart 1.5s ease-in-out infinite;
+            display: block;
+            margin-bottom: clamp(10px, 2vh, 20px);
+        }
+
+        @keyframes pulseHeart {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .poetry-content h2 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 300;
+            letter-spacing: clamp(2px, 1vw, 4px);
+            background: linear-gradient(135deg, #f9d4e8, #c77dff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: clamp(15px, 3vh, 30px);
+        }
+
+        .poem-lines {
+            font-size: clamp(0.9rem, 2vw, 1.4rem);
+            line-height: clamp(1.6, 2.5vw, 2.2);
+            color: #f0d4e8;
+            font-weight: 200;
+            letter-spacing: clamp(0.5px, 0.2vw, 1px);
+        }
+
+        .poem-lines .line {
+            opacity: 0;
+            animation: typeLine 0.8s ease-out forwards;
+            margin: clamp(4px, 0.8vh, 8px) 0;
+            padding: 0 5px;
+        }
+
+        .poem-lines .line:nth-child(1) { animation-delay: 0.5s; }
+        .poem-lines .line:nth-child(2) { animation-delay: 1.3s; }
+        .poem-lines .line:nth-child(3) { animation-delay: 2.1s; }
+        .poem-lines .line:nth-child(4) { animation-delay: 2.9s; }
+        .poem-lines .line:nth-child(5) { animation-delay: 3.7s; }
+        .poem-lines .line:nth-child(6) { animation-delay: 4.5s; }
+        .poem-lines .line:nth-child(7) { animation-delay: 5.3s; }
+        .poem-lines .line:nth-child(8) { animation-delay: 6.1s; }
+        .poem-lines .line:nth-child(9) { animation-delay: 6.9s; }
+        .poem-lines .line:nth-child(10) { animation-delay: 7.7s; }
+
+        @keyframes typeLine {
+            0% { opacity: 0; transform: translateY(15px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .poem-lines .highlight {
+            color: #f7b0d9;
+            font-weight: 400;
+        }
+
+        .floating-hearts {
+            position: absolute;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            animation: floatHeart 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes floatHeart {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(15deg) scale(1.2); opacity: 1; }
+        }
+
+        /* ----- RESPONSIVE BREAKPOINTS ----- */
+        @media (max-width: 768px) {
+            .presentation { padding: 5px 5px 10px; height: 100vh; justify-content: center; }
+            .carousel-3d { height: clamp(280px, 45vh, 380px); }
+            .carousel-track { width: clamp(160px, 35vw, 220px); height: clamp(220px, 38vh, 310px); }
+            .video-card { 
+                width: clamp(150px, 32vw, 220px); 
+                height: clamp(200px, 35vh, 310px); 
+                margin-left: calc(clamp(150px, 32vw, 220px) / -2); 
+                margin-top: calc(clamp(200px, 35vh, 310px) / -2); 
+            }
+            .controls button { padding: 8px 16px; font-size: 0.85rem; min-width: 70px; gap: 6px; }
+            .controls button i { font-size: 0.9rem; }
+            .poetry-section { width: 95%; padding: 20px 15px; max-height: 70vh; }
+        }
+
+        @media (max-width: 480px) {
+            .love-title { font-size: 1.4rem; letter-spacing: 3px; gap: 6px; margin-bottom: 5px; }
+            .love-title i { font-size: 1rem; }
+            .carousel-3d { height: clamp(220px, 38vh, 280px); }
+            .carousel-track { width: clamp(130px, 30vw, 170px); height: clamp(180px, 32vh, 250px); }
+            .video-card { 
+                width: clamp(120px, 28vw, 170px); 
+                height: clamp(160px, 30vh, 250px); 
+                margin-left: calc(clamp(120px, 28vw, 170px) / -2); 
+                margin-top: calc(clamp(160px, 30vh, 250px) / -2); 
+                border-radius: 16px; 
+            }
+            .video-card .glow-ring { border-radius: 16px; }
+            .video-card .caption { font-size: 0.6rem; padding: 3px 10px; bottom: 8px; left: 8px; letter-spacing: 0.5px; }
+            .controls { gap: 10px; margin: 5px 0; }
+            .controls button { padding: 6px 12px; font-size: 0.7rem; min-width: 60px; gap: 4px; border-radius: 30px; }
+            .controls button i { font-size: 0.7rem; }
+            .poetry-content h2 { font-size: 1.2rem; }
+            .poem-lines { font-size: 0.8rem; line-height: 1.6; }
+            .poetry-section { padding: 15px 12px; max-height: 65vh; border-radius: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="flowerCanvas"></canvas>
+
+    <!-- PROPOSAL OVERLAY -->
+    <div class="proposal-screen" id="proposalScreen">
+        <div class="proposal-box">
+            <!-- INJECTED HOMEPAGE IMAGE -->
+            <div class="proposal-image-wrapper">
+                <img src="side eye.jpeg" alt="Question Image">
+            </div>
+            <h1 class="proposal-title">Do you hate me?</h1>
+            <div class="proposal-buttons">
+                <button id="yesBtn">Yes</button>
+                <button id="noBtn">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE HUB -->
+    <div class="presentation" id="presentation">
+        <div class="love-title">
+            <i class="fas fa-heart"></i> I know you love me ,you mean much to me <i class="fas fa-heart"></i>
+        </div>
+
+        <div class="carousel-3d" id="carousel3d">
+            <div class="carousel-track" id="track"></div>
+        </div>
+
+        <div class="controls" id="controls">
+            <button id="prevBtn"><i class="fas fa-chevron-left"></i> Prev</button>
+            <button id="nextBtn">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <!-- POETRY SECTION -->
+        <div class="poetry-section" id="poetrySection">
+            <div class="poetry-content">
+                <span class="heart-icon">❤️</span>
+                <h2>For You, My Everything</h2>
+                <div class="poem-lines">
+                    <div class="line">In every <span class="highlight">smile</span> you give, I find my sun,</div>
+                    <div class="line">In every <span class="highlight">glance</span>, a universe begun.</div>
+                    <div class="line">Your <span class="highlight">eyes</span> hold stars that guide me home,</div>
+                    <div class="line">In your <span class="highlight">warmth</span>, I'm never alone.</div>
+                    <div class="line">Your <span class="highlight">skin</span> glows like morning light,</div>
+                    <div class="line">You turn my darkness into bright.</div>
+                    <div class="line">Every <span class="highlight">moment</span> with you is a treasure,</div>
+                    <div class="line">Your <span class="highlight">love</span> is my greatest pleasure.</div>
+                    <div class="line">You are the <span class="highlight">poem</span> I'll forever write,</div>
+                    <div class="line">My <span class="highlight">everything</span>, my guiding light. ✨</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            "use strict";
+
+            const videoSources = [
+                'my love.mp4',
+                'her eyes.mp4',
+                'her smile.mp4',
+                'her skin.mp4',
+                'my love.mp4'
+            ];
+
+            const captions = [
+                '💕 my whole world',
+                '👁️ your eyes captivate me',
+                '😊 your smile lights up my day',
+                '✨ your skin glows like gold',
+                '🌹 you are my everything'
+            ];
+
+            let currentIndex = 0;
+            const total = videoSources.length;
+            const track = document.getElementById('track');
+            const poetrySection = document.getElementById('poetrySection');
+            let poetryShown = false;
+            let autoInterval = null;
+
+            const yesBtn = document.getElementById('yesBtn');
+            const noBtn = document.getElementById('noBtn');
+            const proposalScreen = document.getElementById('proposalScreen');
+            const presentation = document.getElementById('presentation');
+            
+            let yesDodgeCount = 0;
+
+            function makeButtonRun(button) {
+                if (!button.classList.contains('runaway')) {
+                    const rect = button.getBoundingClientRect();
+                    button.style.left = rect.left + 'px';
+                    button.style.top = rect.top + 'px';
+                    button.classList.add('runaway');
+                }
+
+                const padding = 60;
+                const minX = padding;
+                const maxX = window.innerWidth - button.offsetWidth - padding;
+                const minY = padding;
+                const maxY = window.innerHeight - button.offsetHeight - padding;
+
+                let newX = Math.random() * (maxX - minX) + minX;
+                let newY = Math.random() * (maxY - minY) + minY;
+
+                button.style.left = `${newX}px`;
+                button.style.top = `${newY}px`;
+            }
+
+            noBtn.addEventListener('mouseenter', () => makeButtonRun(noBtn));
+            noBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                makeButtonRun(noBtn);
+            });
+            noBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                makeButtonRun(noBtn);
+            });
+
+            function handleYesAction(e) {
+                if (yesDodgeCount < 1) {
+                    e.preventDefault();
+                    yesDodgeCount++;
+                    makeButtonRun(yesBtn);
+                    yesBtn.textContent = "Yes! ❤️";
+                } else {
+                    proposalScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        proposalScreen.style.visibility = 'hidden';
+                        presentation.classList.add('is-active');
+                        initCarousel();
+                    }, 1000);
+                }
+            }
+
+            yesBtn.addEventListener('click', handleYesAction);
+            yesBtn.addEventListener('touchstart', (e) => {
+                if (yesDodgeCount < 1) {
+                    e.preventDefault();
+                    handleYesAction(e);
+                }
+            });
+
+            function buildCarousel() {
+                track.innerHTML = '';
+                for (let i = 0; i < total; i++) {
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+                    card.dataset.index = i;
+
+                    const video = document.createElement('video');
+                    video.src = videoSources[i % videoSources.length];
+                    video.loop = true;
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.autoplay = false;
+                    video.preload = 'metadata';
+
+                    const caption = document.createElement('div');
+                    caption.className = 'caption';
+                    caption.textContent = captions[i % captions.length];
+
+                    const ring = document.createElement('div');
+                    ring.className = 'glow-ring';
+
+                    card.appendChild(video);
+                    card.appendChild(caption);
+                    card.appendChild(ring);
+                    track.appendChild(card);
+                }
+                setTimeout(() => updateVisibility(currentIndex), 150);
+            }
+
+            function updateVisibility(activeIndex) {
+                const cards = track.querySelectorAll('.video-card');
+                cards.forEach((card, idx) => {
+                    const video = card.querySelector('video');
+                    card.classList.remove('is-focused', 'is-neighbor');
+                    const diff = Math.min(Math.abs(idx - activeIndex), total - Math.abs(idx - activeIndex));
+
+                    if (idx === activeIndex) {
+                        card.classList.add('is-focused');
+                        video.play().catch(() => {});
+                    } else {
+                        video.pause();
+                        if (diff === 1) {
+                            card.classList.add('is-neighbor');
+                        }
+                    }
+                });
+            }
+
+            function rotateTo(index) {
+                const angle = index * (360 / total);
+                track.style.transform = `rotateY(${angle}deg)`;
+                currentIndex = index;
+                setTimeout(() => updateVisibility(index), 350);
+            }
+
+            window.rotationCount = 0;
+
+            function nextSlide() {
+                const next = (currentIndex + 1) % total;
+                if (next === 0) window.rotationCount++;
+                rotateTo(next);
+                if (!poetryShown && window.rotationCount >= 2) {
+                    setTimeout(showPoetry, 1500);
+                }
+            }
+
+            function prevSlide() { 
+                const prev = (currentIndex - 1 + total) % total;
+                rotateTo(prev); 
+            }
+
+            function positionCards() {
+                const cards = track.querySelectorAll('.video-card');
+                const radius = window.innerWidth < 480 ? 200 : 
+                               window.innerWidth < 768 ? 280 : 390;
+                const angleStep = (360 / total);
+                
+                cards.forEach((card, i) => {
+                    const angleDeg = i * angleStep;
+                    const rad = angleDeg * (Math.PI / 180);
+                    const x = Math.sin(rad) * radius;
+                    const z = Math.cos(rad) * radius;
+                    
+                    const baseTransform = `translateX(${x}px) translateZ(${z}px) rotateY(${-angleDeg}deg)`;
+                    card.style.setProperty('--card-transform', baseTransform);
+                    card.style.transform = baseTransform;
+                });
+            }
+
+            function showPoetry() {
+                if (poetryShown) return;
+                poetryShown = true;
+                stopAutoRotate();
+                
+                const carousel = document.querySelector('.carousel-3d');
+                const controls = document.getElementById('controls');
+                const title = document.querySelector('.love-title');
+                
+                carousel.style.transition = 'opacity 1.5s ease, transform 1.5s ease';
+                controls.style.transition = 'opacity 1.5s ease, transform 1.5s ease';
+                title.style.transition = 'opacity 1.5s ease, transform 1.5s ease';
+                
+                carousel.style.opacity = '0';
+                carousel.style.transform = 'scale(0.8) translateY(30px)';
+                controls.style.opacity = '0';
+                controls.style.transform = 'translateY(30px)';
+                title.style.opacity = '0';
+                title.style.transform = 'translateY(-30px)';
+
+                setTimeout(() => {
+                    carousel.style.display = 'none';
+                    controls.style.display = 'none';
+                    title.style.display = 'none';
+                    
+                    poetrySection.style.display = 'block';
+                    poetrySection.style.animation = 'fadeInPoetry 1.5s ease-out';
+                    
+                    addFloatingHearts();
+                    triggerCelebration();
+                }, 1600);
+            }
+
+            function addFloatingHearts() {
+                const container = poetrySection;
+                const hearts = ['❤️', '💕', '💗', '💖', '✨', '🌟'];
+                const count = window.innerWidth < 480 ? 6 : 12;
+                for (let i = 0; i < count; i++) {
+                    const heart = document.createElement('div');
+                    heart.className = 'floating-hearts';
+                    heart.textContent = hearts[i % hearts.length];
+                    heart.style.left = Math.random() * 90 + '%';
+                    heart.style.top = Math.random() * 90 + '%';
+                    heart.style.animationDelay = Math.random() * 5 + 's';
+                    heart.style.animationDuration = (4 + Math.random() * 4) + 's';
+                    heart.style.fontSize = clamp(1.2, Math.random() * 2 + 1, 3) + 'rem';
+                    container.appendChild(heart);
+                }
+            }
+
+            function clamp(min, val, max) {
+                return Math.min(Math.max(min, val), max);
+            }
+
+            function triggerCelebration() {
+                const colors = ['#f7b0d9', '#c77dff', '#f9d4e8', '#ff85a1', '#ffd700'];
+                const count = window.innerWidth < 480 ? 25 : 50;
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        const particle = document.createElement('div');
+                        const size = clamp(4, Math.random() * 10 + 4, 14);
+                        particle.style.cssText = `
+                            position: fixed;
+                            width: ${size}px;
+                            height: ${size}px;
+                            background: ${colors[Math.floor(Math.random() * colors.length)]};
+                            border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                            left: ${Math.random() * 100}%;
+                            top: -10%;
+                            pointer-events: none;
+                            z-index: 999;
+                            box-shadow: 0 0 20px rgba(199, 125, 255, 0.5);
+                            transition: all ${3 + Math.random() * 4}s cubic-bezier(0.2, 0.8, 0.3, 1);
+                        `;
+                        document.body.appendChild(particle);
+                        
+                        setTimeout(() => {
+                            particle.style.transform = `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`;
+                            particle.style.opacity = '0';
+                        }, 100);
+                        
+                        setTimeout(() => { particle.remove(); }, 5000);
+                    }, i * 60);
+                }
+            }
+
+            function startAutoRotate() {
+                if (poetryShown) return;
+                stopAutoRotate();
+                autoInterval = setInterval(nextSlide, 4500);
+            }
+
+            function stopAutoRotate() {
+                if (autoInterval) {
+                    clearInterval(autoInterval);
+                    autoInterval = null;
+                }
+            }
+
+            function initCarousel() {
+                buildCarousel();
+                requestAnimationFrame(() => {
+                    positionCards();
+                    track.style.transform = 'rotateY(0deg)';
+                    rotateTo(0);
+                    startAutoRotate();
+                });
+            }
+
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    positionCards();
+                }, 300);
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', function(e) {
+                e.preventDefault(); nextSlide(); stopAutoRotate(); setTimeout(startAutoRotate, 4000);
+            });
+
+            document.getElementById('prevBtn').addEventListener('click', function(e) {
+                e.preventDefault(); prevSlide(); stopAutoRotate(); setTimeout(startAutoRotate, 4000);
+            });
+
+            let touchStartX = 0; let touchStartY = 0; let isSwiping = false;
+
+            document.addEventListener('touchstart', function(e) {
+                touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; isSwiping = true;
+            }, { passive: true });
+
+            document.addEventListener('touchmove', function(e) {
+                if (!isSwiping) return;
+                const touchEndX = e.touches[0].clientX; const touchEndY = e.touches[0].clientY;
+                const diffX = touchStartX - touchEndX; const diffY = touchStartY - touchEndY;
+                
+                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+                    if (diffX > 0) nextSlide(); else prevSlide();
+                    isSwiping = false; stopAutoRotate(); setTimeout(startAutoRotate, 4000);
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', () => { isSwiping = false; }, { passive: true });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') { nextSlide(); stopAutoRotate(); setTimeout(startAutoRotate, 4000); }
+                else if (e.key === 'ArrowLeft') { prevSlide(); stopAutoRotate(); setTimeout(startAutoRotate, 4000); }
+            });
+        })();
+    </script>
+</body>
+</html>
